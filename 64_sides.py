@@ -1,6 +1,4 @@
-from vpython import canvas, vector, color, triangle, rate, scene
-import math
-import random
+from vpython import canvas, vector, color, triangle, rate, scene, keysdown
 
 # Set up the scene
 scene = canvas(title='Rotating Hexecontatetrahedron', width=800, height=600, center=vector(0, 0, 0), background=color.white)
@@ -64,19 +62,18 @@ while True:
     rate(30)  # 30 frames per second
     
     # Handle keyboard input
-    if scene.kb.keys:
-        key = scene.kb.getkey()
-        if key == 'q':  # Quit
-            break
-        elif key == 'p':  # Pause/Resume
-            pause = not pause
-        elif key == 'r':  # Reset rotation
-            for face in hexecontatetrahedron:
-                face.rotate(angle=-face.orientation.angle, axis=face.orientation.axis)
-        elif key == 'c':  # Change color
-            new_color = vector(random.random(), random.random(), random.random())
-            for face in hexecontatetrahedron:
-                face.color = new_color
+    keys = keysdown()
+    if 'q' in keys:  # Quit
+        break
+    elif 'p' in keys:  # Pause/Resume
+        pause = not pause
+    elif 'r' in keys:  # Reset rotation
+        for face in hexecontatetrahedron:
+            face.rotate(angle=-face.orientation.angle, axis=face.orientation.axis)
+    elif 'c' in keys:  # Change color
+        new_color = vector(random.random(), random.random(), random.random())
+        for face in hexecontatetrahedron:
+            face.color = new_color
     
     # Rotate if not paused
     if not pause:
