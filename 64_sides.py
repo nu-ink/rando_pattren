@@ -1,4 +1,7 @@
-from vpython import canvas, vector, color, triangle, rate, scene, keysdown
+from vpython import canvas, vector, color, triangle, rate, scene
+import math
+import random
+import numpy as np
 
 # Set up the scene
 scene = canvas(title='Rotating Hexecontatetrahedron', width=800, height=600, center=vector(0, 0, 0), background=color.white)
@@ -23,15 +26,20 @@ def create_hexecontatetrahedron(radius=1, face_color=color.blue, face_opacity=0.
 
     phi = (1 + math.sqrt(5)) / 2  # Golden ratio
     
+    # Use numpy for efficient vertex generation
+    x = np.array([-1, 1])
+    y = np.array([-1, 1])
+    z = np.array([-1, 1])
+    
     vertices = []
-    for x in [-1, 1]:
-        for y in [-1, 1]:
-            for z in [-1, 1]:
+    for i in x:
+        for j in y:
+            for k in z:
                 vertices.extend([
-                    vector(x, y, z),
-                    vector(0, x * phi, y / phi),
-                    vector(x / phi, 0, y * phi),
-                    vector(x * phi, y / phi, 0)
+                    vector(i, j, k),
+                    vector(0, i * phi, j / phi),
+                    vector(i / phi, 0, j * phi),
+                    vector(i * phi, j / phi, 0)
                 ])
 
     # Scale vertices
@@ -53,31 +61,73 @@ def create_hexecontatetrahedron(radius=1, face_color=color.blue, face_opacity=0.
 # Create the hexecontatetrahedron
 hexecontatetrahedron = create_hexecontatetrahedron(2, color.blue, 0.7)
 
+# Global dictionary to keep track of key states
+key_states = {}
+
+def keydown(evt):
+    """Handler for keydown events"""
+    key_states[evt.key] = True
+
+def keyup(evt):
+    """Handler for keyup events"""
+    key_states[evt.key] = False
+
+# Bind the keydown and keyup handlers to the scene
+scene.bind('keydown', keydown)
+scene.bind('keyup', keyup)
+
+def keysdown():
+    """Returns a list of currently pressed keys"""
+    return [key for key, pressed in key_states.items() if pressed]
+
 # Animation settings
 rotation_speed = 0.02
 pause = False
+recent_key_press = {key: False for key in ['p', 'c', 'r']}
 
 # Animation loop
-while True:
-    rate(30)  # 30 frames per second
-    
-    # Handle keyboard input
-    keys = keysdown()
-    if 'q' in keys:  # Quit
-        break
-    elif 'p' in keys:  # Pause/Resume
-        pause = not pause
-    elif 'r' in keys:  # Reset rotation
-        for face in hexecontatetrahedron:
-            face.rotate(angle=-face.orientation.angle, axis=face.orientation.axis)
-    elif 'c' in keys:  # Change color
-        new_color = vector(random.random(), random.random(), random.random())
-        for face in hexecontatetrahedron:
-            face.color = new_color
-    
-    # Rotate if not paused
-    if not pause:
-        for face in hexecontatetrahedron:
-            face.rotate(angle=rotation_speed, axis=vector(0, 1, 0))
+try:
+    while True:
+        rate(30)  # 30 frames per second
+        
+        # Handle keyboard input
+        keys = keysdown()
+        
+        if 'q' in keys:  # Quit
+            break
+        elif 'p' in keys and not recent_key_press['p']:  # Pause/Resume
+            pause = not pause
+            recent_key_press['p'] = True
+            scene.sleep(0.2)  # 200ms delay
+        elif 'r' in keys and not recent_key_press['r']:  # Reset rotation
+            for face in hexecontatetrahedron:
+                face.rotate(angle=-face.orientation.angle, axis=face.orientation.axis)
+            recent_key_press['r'] = True
+            scene.sleep(0.2)  # 200ms delay
+        elif 'c' in keys and not recent_key_press['c']:  # Change color
+            new_color = vector(random.random(), random.random(), random.random())
+            for face in hexecontatetrahedron:
+                face.color = new_color
+            recent_key_press['c'] = True
+            scene.sleep(0.2)  # 200ms delay
+        elif 'up' in keys:  # Increase rotation speed
+            rotation_speed *= 1.1
+        elif 'down' in keys:  # Decrease rotation speed
+            rotation_speed /= 1.1
+        
+        # Reset recent key press flags
+        for key in recent_key_press:
+            if key not in keys:
+                recent_key_press[key] = False
+        
+        # Rotate if not paused
+        if not pause:
+            for face in hexecontatetrahedron:
+                face.rotate(angle=rotation_speed, axis=vector(0, 1, 0))
 
-print("Animation ended")
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+finally:
+    print("Animation ended")
+    print(f"Final rotation speed: {rotation_speed:.4f}")
